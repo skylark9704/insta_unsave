@@ -1,0 +1,72 @@
+const doneNodes = []
+let nodes = []
+
+async function main(){
+    nodes = [...nodes, ...getNewAnchors()]
+    for(let node of nodes){
+        await openPost(node)
+        //await scrollDown()
+    }
+    console.log(nodes.length, doneNodes.length)
+    if(getNewAnchors().length !== 0){
+        console.log("Loop")
+        nodes = []
+        await main()
+    }
+}
+
+function getNewAnchors() {
+    const allAnchors = Array.from(document.getElementsByTagName('a'))
+    const filtered = allAnchors.filter((anchor) => {
+        const found = nodes.findIndex((node) => {
+            return node.href === anchor.href
+        })
+        console.log("Found : ", found)
+        if (found >= 0){
+            return false;
+        }
+        return anchor.href.includes('/p/') && !doneNodes.includes(anchor.href)
+    })
+    return filtered
+}
+
+async function openPost(postNode){
+    console.log('Opening Post')
+    postNode.scrollIntoView()
+    await delay(500)
+    postNode.click()
+    await delay(2000)
+    doneNodes.push(postNode.href)
+    await unsavePost()
+    await closeDialog()
+}
+
+async function unsavePost(){
+    try {
+        document.querySelector('svg[aria-label="Remove"]').parentElement.click()
+    } catch (error) {
+        console.log(error)
+    }
+    await delay(500)
+}
+
+async function closeDialog(){
+    const titles = document.querySelectorAll(`title`)
+    titles.forEach((title) => {
+        if(title.innerHTML === 'Close'){
+            title.parentElement.parentElement.click()
+        }
+    })
+    await delay(1000)
+}
+
+async function scrollDown(){
+    window.scrollBy(0, 125);
+    await delay(500)
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+await main()
